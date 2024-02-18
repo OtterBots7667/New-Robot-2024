@@ -4,13 +4,6 @@
 
 package frc.robot;
 
-import java.lang.annotation.Target;
-
-import org.opencv.imgproc.Moments;
-
-import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.VictorSPXControlMode;
-import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
@@ -31,18 +24,18 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * project.
  */
 public class Robot extends TimedRobot {
-  private static final String kDefaultAuto = "Do Nothing";
-  private static final String autoAred = "Red Position 1, score 2 notes";
-  private static final String autoEred = "Red Position 1, score 1 note, leave zone last second";
-  private static final String autoB = "Drive Straight Forward 8ft";
-  private static final String autoAblue = "Blue Position 1, score 2 notes";
-  private static final String autoEblue = "Blue Position 1, score 1 note, leave zone last second";
-  private static final String autoBetterAred = "red Position 1, score 2 notes, pick up third";
-  private static final String autoBetterAblue = "Blue Position 1, score 1 note, pick up third";
-  private static final String annoyingAutoRed = "red pos. mess up good teams";
-  private static final String annoyingAutoBlue = "blue pos. mess up good teams";
-  private static final String annoyingAuto2Red = "red pos. 2 mess up good teams";
-  private static final String annoyingAuto2Blue = "blue pos. 2 mess up good teams";
+  private static final String doNothing = "Do Nothing";
+  private static final String red2Note = "Red 2 Note";
+  private static final String red1Note = "Red 1 Note";
+  private static final String driveForward= "Drive Forward 8ft";
+  private static final String blue2Note = "Blue 2 Note";
+  private static final String blue1Note = "Blue1 Note";
+  private static final String red3Note = "Red 3 Note";
+  private static final String blue3Note = "Blue 3 Note";
+  private static final String redPushMiddle3 = "Red 3 Push Middle";
+  private static final String bluePushMiddle3 = "Blue 3 Push Middle";
+  private static final String redPushMiddle2 = "Red 2 Push Middle";
+  private static final String bluePushMiddle2 = "Blue 2 Push Middle";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
@@ -60,9 +53,7 @@ private CANSparkMax rightDrive1 = new CANSparkMax(0, MotorType.kBrushless);
 private CANSparkMax rightDrive2 = new CANSparkMax(0, MotorType.kBrushless);
 
 private RelativeEncoder leftEncoder1;
-private RelativeEncoder leftEncoder2;
 private RelativeEncoder rightEncoder1;
-private RelativeEncoder rightEncoder2;
 
 private PIDController myPID = new PIDController(0, 0, 0);
 
@@ -104,18 +95,18 @@ Double armDownPos = 0.0;
    */
   @Override
   public void robotInit() {
-    m_chooser.setDefaultOption("Do Nothing", kDefaultAuto);
-    m_chooser.addOption("Position 1, score 2 notes", autoAred);
-    m_chooser.addOption("Position 1, score 1 note, leave zone last second", autoEred);
-    m_chooser.addOption("Drive Straight Forward 8 ft", autoB);
-    m_chooser.addOption("Position 1, score 2 notes", autoAblue);
-    m_chooser.addOption("Position 1, score 1 note, leave zone last second", autoEblue);
-    m_chooser.addOption("Position 1, score 2 notes, pick up third", autoBetterAred);
-    m_chooser.addOption("Position 1, score 2 notes, pick up third", autoBetterAblue);
-    m_chooser.addOption("red pos. mess up good teams", annoyingAutoRed);
-    m_chooser.addOption("blue pos. mess up good teams", annoyingAutoBlue);
-    m_chooser.addOption("blue pos. 2 mess up good teams", annoyingAuto2Blue);
-    m_chooser.addOption("red pos. 2 mess up good teams", annoyingAuto2Red);
+    m_chooser.setDefaultOption("Do Nothing", doNothing);
+    m_chooser.addOption("Red 2 Note", red2Note);
+    m_chooser.addOption("Red 1 Note", red1Note);
+    m_chooser.addOption("Drive Forward 8 ft", driveForward);
+    m_chooser.addOption("Blue 2 Note", blue2Note);
+    m_chooser.addOption("Blue1 Note", blue1Note);
+    m_chooser.addOption("Red 3 Note", red3Note);
+    m_chooser.addOption("Blue 3 Note", blue3Note);
+    m_chooser.addOption("Red 3 Push Middle", redPushMiddle3);
+    m_chooser.addOption("Blue 3 Push Middle", bluePushMiddle3);
+    m_chooser.addOption("Blue 2 Push Middle", bluePushMiddle2);
+    m_chooser.addOption("Red 2 Push Middle", redPushMiddle2);
     SmartDashboard.putData("Auto choices", m_chooser);
 
   rightDrive1.setInverted(true);
@@ -151,9 +142,7 @@ rightArm.set(-pidRaw);
 
 
 leftEncoder1 = leftDrive1.getEncoder();
-leftEncoder2 = leftDrive2.getEncoder();
 rightEncoder1 = rightDrive1.getEncoder();
-rightEncoder2 = rightDrive2.getEncoder();
 
   }
 
@@ -172,7 +161,7 @@ rightEncoder2 = rightDrive2.getEncoder();
   @Override
   public void autonomousInit() {
     m_autoSelected = m_chooser.getSelected();
-    // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
+    // m_autoSelected = SmartDashboard.getString("Auto Selector", doNothing);
     System.out.println("Auto selected: " + m_autoSelected);
   }
 
@@ -185,7 +174,7 @@ rightEncoder2 = rightDrive2.getEncoder();
 
 
     switch (m_autoSelected) {
-      case autoAred:
+      case red2Note:
         // Position 1, score 2 notes
         // 1,027 ticks is 54.5 inches 
         if (rightEncoder1.getPosition() > -1027 && autoVar1) {
@@ -275,7 +264,7 @@ rightEncoder2 = rightDrive2.getEncoder();
         }
       break;
 
-      case autoBetterAred:
+      case red3Note:
   // Position 1, score 2 notes, pick up third 
         // 1,027 ticks is 54.5 inches 
         if (rightEncoder1.getPosition() > -1027 && autoVar1) {
@@ -418,7 +407,7 @@ rightEncoder2 = rightDrive2.getEncoder();
       break;
 
 
-      case autoEred:
+      case red1Note:
         // Position 1, score 1 note, leave zone last second
   if (rightEncoder1.getPosition() > -1027 && autoVar1) {
           leftDrive1.set(-0.5);
@@ -484,7 +473,7 @@ rightEncoder2 = rightDrive2.getEncoder();
       break;
 
 
-      case annoyingAutoRed:
+      case redPushMiddle3:
       // The mission of this auto is to get directly in the way
       // of a robot on the opposite alliance
       // that is running a 5, 6, 7 note auto
@@ -520,8 +509,8 @@ rightEncoder2 = rightDrive2.getEncoder();
       break;
 
 
-      case annoyingAuto2Red:
-      // annoying auto, starting in pos. 2
+      case redPushMiddle2:
+      // annoying auto, starting in pos 2
       if(leftEncoder1.getPosition() < 2036){
         leftDrive1.set(1);
         leftDrive2.set(1);
@@ -551,7 +540,7 @@ rightEncoder2 = rightDrive2.getEncoder();
       break;
 
 
-      case autoB:
+      case driveForward:
         // 355.3 tics is one wheel rotation
         // wheel circumfrence is 18.85 inches
         // 18.85 tics per inch, unbelievable, i know
@@ -572,7 +561,7 @@ rightEncoder2 = rightDrive2.getEncoder();
       break;
 
 
-      case autoAblue:
+      case blue2Note:
   // Position 1, score 2 notes
         // 1,027 ticks is 54.5 inches 
         if (leftEncoder1.getPosition() > -1027 && autoVar1) {
@@ -663,7 +652,7 @@ rightEncoder2 = rightDrive2.getEncoder();
       break;
       
 
-      case autoBetterAblue:
+      case blue3Note:
  // Position 1, score 2 notes
         // 1,027 ticks is 54.5 inches 
         if (leftEncoder1.getPosition() > -1027 && autoVar1) {
@@ -799,7 +788,7 @@ rightEncoder2 = rightDrive2.getEncoder();
       break;
 
 
-      case autoEblue:
+      case blue1Note:
 // Position 1, score 1 note, leave zone last second
   if (leftEncoder1.getPosition() > -1027 && autoVar1) {
           leftDrive1.set(-0.5);
@@ -865,8 +854,8 @@ rightEncoder2 = rightDrive2.getEncoder();
       break;
 
 
-      case annoyingAutoBlue:
-// The mission of this auto is to get directly in the way
+      case bluePushMiddle3:
+      // The mission of this auto is to get directly in the way
       // of a robot on the opposite alliance
       // that is running a 5, 6, 7 note auto
 
@@ -900,8 +889,8 @@ rightEncoder2 = rightDrive2.getEncoder();
 
       break;
 
-      case annoyingAuto2Blue:
-// annoying auto, starting in pos. 2
+      case bluePushMiddle2:
+// annoying auto, starting in pos 2
       if(rightEncoder1.getPosition() < 2036){
         leftDrive1.set(1);
         leftDrive2.set(1);
@@ -929,7 +918,7 @@ rightEncoder2 = rightDrive2.getEncoder();
       }
         break;
 
-      case kDefaultAuto:
+      case doNothing:
       default:
    // Do Nothing
 
@@ -970,29 +959,40 @@ if (joyDrive.getRawButton(6)) {
 } else if(joyDrive.getRawButton(5)){
   target = armDownPos;
 }
-
   }
-
   /** This function is called once when the robot is disabled. */
   @Override
   public void disabledInit() {}
-
   /** This function is called periodically when disabled. */
   @Override
   public void disabledPeriodic() {}
-
   /** This function is called once when test mode is enabled. */
   @Override
   public void testInit() {}
-
   /** This function is called periodically during test mode. */
   @Override
   public void testPeriodic() {}
-
   /** This function is called once when the robot is first started up. */
   @Override
   public void simulationInit() {}
-
+// Charles
+// Jackson
+// Jose
+// Tom
+// Maya
+// Matteo
+// Lachlan
+// Aki
+// Felix
+// Rich
+// Jessica
+// Owen
+// Andy
+// Alejandra
+// Jared
+// Chris
+// Mark from PG&E
+// Ottie
   /** This function is called periodically whilst in simulation. */
   @Override
   public void simulationPeriodic() {}
