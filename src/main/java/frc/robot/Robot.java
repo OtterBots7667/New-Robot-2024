@@ -40,7 +40,8 @@ public class Robot extends TimedRobot {
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
 
-private Joystick joyDrive = new Joystick(1);
+private Joystick joyDrive = new Joystick(0);
+private Joystick joyButtons = new Joystick(1);
   
 private TalonFX rightArm = new TalonFX(0);
 private TalonFX leftArm = new TalonFX(0);
@@ -57,16 +58,8 @@ private RelativeEncoder rightEncoder1;
 
 private PIDController myPID = new PIDController(0, 0, 0);
 
-DifferentialDrive driveTrain = new DifferentialDrive(
-    (double output) -> {
-        leftDrive1.set(output);
-        leftDrive2.set(output);
-    },
-    (double output) -> {
-        rightDrive1.set(output);
-        rightDrive2.set(output);
-    });
-
+Double driveSpeedLeft;
+Double driveSpeedRight;
 
 int autoCount = 0;
 int autoCount2 = 100;
@@ -82,7 +75,7 @@ Double p = 0.0;
 Double i = 0.0;
 Double d = 0.0;
 
-Double target = 0.0;
+Double target = null;
 Double pidRaw = 0.0;
 
 // Change these later
@@ -178,6 +171,7 @@ rightEncoder1 = rightDrive1.getEncoder();
         // Position 1, score 2 notes
         // 1,027 ticks is 54.5 inches 
         if (rightEncoder1.getPosition() > -1027 && autoVar1) {
+          target = armUpPos;
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
@@ -268,6 +262,7 @@ rightEncoder1 = rightDrive1.getEncoder();
   // Position 1, score 2 notes, pick up third 
         // 1,027 ticks is 54.5 inches 
         if (rightEncoder1.getPosition() > -1027 && autoVar1) {
+          target = armUpPos;
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
@@ -402,14 +397,13 @@ rightEncoder1 = rightDrive1.getEncoder();
           outtake.set(0);
         }
 
-
-
       break;
 
 
       case red1Note:
         // Position 1, score 1 note, leave zone last second
   if (rightEncoder1.getPosition() > -1027 && autoVar1) {
+          target = armUpPos;
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
@@ -459,6 +453,7 @@ rightEncoder1 = rightDrive1.getEncoder();
           leftDrive2.set(0);
           rightDrive1.set(0);
           rightDrive2.set(0);
+          target = armDownPos;
         } else if(!autoVar1 && autoCount > 700){
           leftDrive1.set(1);
           leftDrive2.set(1);
@@ -479,17 +474,25 @@ rightEncoder1 = rightDrive1.getEncoder();
       // that is running a 5, 6, 7 note auto
 
 
-        if (leftEncoder1.getPosition() < 3054) {
+        if (leftEncoder1.getPosition() < 500) {
+          target = armUpPos;
+          leftDrive1.set(0.5);
+          leftDrive2.set(0.5);
+          rightDrive1.set(0.5);
+          rightDrive2.set(0.5);
+          outtake.set(1);
+        }else if(leftEncoder1.getPosition() < 3054){
           leftDrive1.set(1);
           leftDrive2.set(1);
           rightDrive1.set(1);
           rightDrive2.set(1);
+          outtake.set(0);
+          target = armDownPos;
         } else if(leftEncoder1.getPosition() < 5090){
           leftDrive1.set(1);
           leftDrive2.set(1);
           rightDrive1.set(.872);
           rightDrive2.set(.872);
-          target = armDownPos;
           intake.set(1);
         }else if(leftEncoder1.getPosition() < 7000){
           leftDrive1.set(1);
@@ -498,7 +501,6 @@ rightEncoder1 = rightDrive1.getEncoder();
           rightDrive2.set(1);
         }else if(leftEncoder1.getPosition() < 8257){
           intake.set(0);
-          target = armUpPos;
         }else{
           leftDrive1.set(0);
           leftDrive2.set(0);
@@ -511,13 +513,21 @@ rightEncoder1 = rightDrive1.getEncoder();
 
       case redPushMiddle2:
       // annoying auto, starting in pos 2
-      if(leftEncoder1.getPosition() < 2036){
+      if(leftEncoder1.getPosition() < 500){
+        leftDrive1.set(0.5);
+        leftDrive2.set(0.5);
+        rightDrive1.set(0.5);
+        rightDrive2.set(0.5);
+        target = armUpPos;
+        outtake.set(1);
+      } else if(leftEncoder1.getPosition() < 2036){
+        target = armDownPos;
+        outtake.set(0);
         leftDrive1.set(1);
         leftDrive2.set(1);
         rightDrive1.set(1);
         rightDrive2.set(1);
-        target = armDownPos;
-      } else if(leftEncoder1.getPosition() < 6300){
+      }else if(leftEncoder1.getPosition() < 6300){
         leftDrive1.set(1);
         leftDrive2.set(1);
         rightDrive1.set(0.938);
@@ -529,7 +539,6 @@ rightEncoder1 = rightDrive1.getEncoder();
         rightDrive1.set(1);
         rightDrive2.set(1);
         intake.set(0);
-        target = armUpPos;
       }else{
         leftDrive1.set(0);
         leftDrive2.set(0);
@@ -548,6 +557,7 @@ rightEncoder1 = rightDrive1.getEncoder();
 
         //Drive Straight Forward 8 ft
         if (leftEncoder1.getPosition() < 1800) {
+          target = armDownPos;
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(0.5);
@@ -560,11 +570,11 @@ rightEncoder1 = rightDrive1.getEncoder();
         }
       break;
 
-
       case blue2Note:
   // Position 1, score 2 notes
         // 1,027 ticks is 54.5 inches 
         if (leftEncoder1.getPosition() > -1027 && autoVar1) {
+          target = armUpPos;
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
@@ -656,6 +666,7 @@ rightEncoder1 = rightDrive1.getEncoder();
  // Position 1, score 2 notes
         // 1,027 ticks is 54.5 inches 
         if (leftEncoder1.getPosition() > -1027 && autoVar1) {
+          target = armUpPos;
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
@@ -791,6 +802,7 @@ rightEncoder1 = rightDrive1.getEncoder();
       case blue1Note:
 // Position 1, score 1 note, leave zone last second
   if (leftEncoder1.getPosition() > -1027 && autoVar1) {
+          target = armUpPos;
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
@@ -860,17 +872,25 @@ rightEncoder1 = rightDrive1.getEncoder();
       // that is running a 5, 6, 7 note auto
 
 
-        if (rightEncoder1.getPosition() < 3054) {
+        if (rightEncoder1.getPosition() < 500) {
+          target = armUpPos;
+          leftDrive1.set(0.5);
+          leftDrive2.set(0.5);
+          rightDrive1.set(0.5);
+          rightDrive2.set(0.5);
+          outtake.set(1);
+        }else if(rightEncoder1.getPosition() < 3054){
+          target = armDownPos;
           leftDrive1.set(1);
           leftDrive2.set(1);
           rightDrive1.set(1);
           rightDrive2.set(1);
+          outtake.set(0);
         } else if(rightEncoder1.getPosition() < 5090){
           leftDrive1.set(.872);
           leftDrive2.set(.872);
           rightDrive1.set(1);
           rightDrive2.set(1);
-          target = armDownPos;
           intake.set(1);
         }else if(rightEncoder1.getPosition() < 7000){
           leftDrive1.set(1);
@@ -879,7 +899,6 @@ rightEncoder1 = rightDrive1.getEncoder();
           rightDrive2.set(1);
         }else if(rightEncoder1.getPosition() < 8257){
           intake.set(0);
-          target = armUpPos;
         }else{
           leftDrive1.set(0);
           leftDrive2.set(0);
@@ -891,12 +910,20 @@ rightEncoder1 = rightDrive1.getEncoder();
 
       case bluePushMiddle2:
 // annoying auto, starting in pos 2
-      if(rightEncoder1.getPosition() < 2036){
+      if(rightEncoder1.getPosition() < 500){
+        target = armUpPos;
+        outtake.set(1);
+        leftDrive1.set(0.5);
+        leftDrive2.set(0.5);
+        rightDrive1.set(0.5);
+        rightDrive2.set(0.5);
+      }else if(rightEncoder1.getPosition() < 2036){
+        target = armDownPos;
+        outtake.set(0);
         leftDrive1.set(1);
         leftDrive2.set(1);
         rightDrive1.set(1);
         rightDrive2.set(1);
-        target = armDownPos;
       } else if(rightEncoder1.getPosition() < 6300){
         leftDrive1.set(0.938);
         leftDrive2.set(0.938);
@@ -909,7 +936,6 @@ rightEncoder1 = rightDrive1.getEncoder();
         rightDrive1.set(1);
         rightDrive2.set(1);
         intake.set(0);
-        target = armUpPos;
       }else{
         leftDrive1.set(0);
         leftDrive2.set(0);
@@ -935,31 +961,69 @@ autoCount2++;
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-// This is the drive code
-    driveTrain.tankDrive(joyDrive.getRawAxis(1), joyDrive.getRawAxis(5));
+
+    // This is the drive code
+  
+if(joyDrive.getRawAxis(1) > -0.1 && joyDrive.getRawAxis(1) < 0.1){
+driveSpeedLeft = 0.0;
+}else if(joyDrive.getRawAxis(1) < 0){
+driveSpeedLeft = joyDrive.getRawAxis(1) * joyDrive.getRawAxis(1) * -1;
+}else{
+driveSpeedLeft = joyDrive.getRawAxis(1) * joyDrive.getRawAxis(1);
+}
+
+if(joyDrive.getRawAxis(5) > -0.1 && joyDrive.getRawAxis(5) < 0.1){
+driveSpeedRight = 0.0;
+}else if(joyDrive.getRawAxis(5) < 0){
+driveSpeedRight = joyDrive.getRawAxis(5) * joyDrive.getRawAxis(5) * -1;
+}else{
+driveSpeedRight = joyDrive.getRawAxis(5) * joyDrive.getRawAxis(5);
+}
+
+if(joyDrive.getRawButton(1)){
+rightDrive1.set(driveSpeedLeft);
+rightDrive2.set(driveSpeedLeft);
+leftDrive1.set(driveSpeedLeft);
+leftDrive2.set(driveSpeedLeft);
+}else{
+rightDrive1.set(driveSpeedRight);
+rightDrive2.set(driveSpeedRight);
+leftDrive1.set(driveSpeedLeft);
+leftDrive2.set(driveSpeedLeft);
+}
+
+
 
 // Intake & Outtake code
-
-if (joyDrive.getRawAxis(2) > 0.5) {
+if (joyButtons.getRawButton(2)) {
   intake.set(1);
 } else {
     intake.set(0);
 }
 
-if (joyDrive.getRawAxis(3) > 0.5) {
+if (joyButtons.getRawButton(1)) {
   outtake.set(1);
 } else {
     outtake.set(0);
 }
 
 
+if (joyButtons.getRawButton(12)){
 // Arm Up & Down code
-if (joyDrive.getRawButton(6)) {
+if (joyButtons.getRawButton(8)) {
   target = armUpPos;
-} else if(joyDrive.getRawButton(5)){
+} else if(joyButtons.getRawButton(7)){
   target = armDownPos;
 }
+  } else if(joyButtons.getRawButton(11)){
+    if(joyButtons.getRawAxis(1) == -1){
+      target += 50;
+    } else if(joyButtons.getRawAxis(1) == 1){
+      target -= 50;
+    }
   }
+}
+
   /** This function is called once when the robot is disabled. */
   @Override
   public void disabledInit() {}
@@ -975,6 +1039,12 @@ if (joyDrive.getRawButton(6)) {
   /** This function is called once when the robot is first started up. */
   @Override
   public void simulationInit() {}
+
+  /** This function is called periodically whilst in simulation. */
+  @Override
+  public void simulationPeriodic() {}
+}
+  // Members:
 // Charles
 // Jackson
 // Jose
@@ -983,6 +1053,7 @@ if (joyDrive.getRawButton(6)) {
 // Matteo
 // Lachlan
 // Aki
+  // Mentors & Parents:
 // Felix
 // Rich
 // Jessica
@@ -991,10 +1062,11 @@ if (joyDrive.getRawButton(6)) {
 // Alejandra
 // Jared
 // Chris
+// Eric
 // Mark from PG&E
+  // Mascots:
 // Ottie
-  /** This function is called periodically whilst in simulation. */
-  @Override
-  public void simulationPeriodic() {}
-}
-// byeeee
+// Rosy
+// Hank
+// Bailey
+// Luna
