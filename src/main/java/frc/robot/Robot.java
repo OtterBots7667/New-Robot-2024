@@ -4,7 +4,9 @@
 
 package frc.robot;
 
-import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.Orchestra;
+
+import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
@@ -12,9 +14,12 @@ import com.revrobotics.RelativeEncoder;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
+import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
+import com.ctre.phoenix.motorcontrol.TalonSRXControlMode;
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
 
 /**
@@ -43,20 +48,20 @@ public class Robot extends TimedRobot {
 private Joystick joyDrive = new Joystick(0);
 private Joystick joyButtons = new Joystick(1);
   
-private TalonFX rightArm = new TalonFX(0);
-private TalonFX leftArm = new TalonFX(0);
-private TalonFX intake = new TalonFX(0);
-private TalonFX outtake = new TalonFX(0);
+private TalonFX rightArm = new TalonFX(3);
+private TalonFX leftArm = new TalonFX(2);
+private TalonSRX intake = new TalonSRX(4);
+private TalonSRX outtake = new TalonSRX(5);
 
-private CANSparkMax leftDrive1 = new CANSparkMax(0, MotorType.kBrushless);
-private CANSparkMax leftDrive2 = new CANSparkMax(0, MotorType.kBrushless);
-private CANSparkMax rightDrive1 = new CANSparkMax(0, MotorType.kBrushless);
-private CANSparkMax rightDrive2 = new CANSparkMax(0, MotorType.kBrushless);
+private CANSparkMax leftDrive1 = new CANSparkMax(8, MotorType.kBrushless);
+private CANSparkMax leftDrive2 = new CANSparkMax(9, MotorType.kBrushless);
+private CANSparkMax rightDrive1 = new CANSparkMax(7, MotorType.kBrushless);
+private CANSparkMax rightDrive2 = new CANSparkMax(6, MotorType.kBrushless);
 
-private RelativeEncoder leftEncoder1;
-private RelativeEncoder rightEncoder1;
 
 private PIDController myPID = new PIDController(0, 0, 0);
+
+
 
 Double driveSpeedLeft;
 Double driveSpeedRight;
@@ -70,17 +75,23 @@ Boolean autoVar4 = true;
 Boolean autoVar5 = true;
 Boolean autoVar6 = true;
 //PID variables
-
-Double p = 0.0;
+Double f = 0.1149;
+Double p = 0.0000144;
 Double i = 0.0;
 Double d = 0.0;
 
-Double target = null;
+Double target = -4000.0;
 Double pidRaw = 0.0;
 
-// Change these later
-Double armUpPos = 0.0;
-Double armDownPos = 0.0;
+Double armUpPos = -4000.0;
+Double armDownPos = 23000.0;
+
+Boolean startingArmPhase = true;
+int armPhaseCounter = 0;
+Boolean armVar1 = false;
+
+// Double armUpPos = -24000.0;
+// Double armDownPos = -200.0;
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -88,6 +99,12 @@ Double armDownPos = 0.0;
    */
   @Override
   public void robotInit() {
+System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAA");
+    leftArm.setSelectedSensorPosition(0.0);
+    rightArm.setSelectedSensorPosition(0.0);
+    leftDrive1.getEncoder().setPosition(0.0);
+    rightDrive1.getEncoder().setPosition(0.0);
+
     m_chooser.setDefaultOption("Do Nothing", doNothing);
     m_chooser.addOption("Red 2 Note", red2Note);
     m_chooser.addOption("Red 1 Note", red1Note);
@@ -104,6 +121,7 @@ Double armDownPos = 0.0;
 
   rightDrive1.setInverted(true);
   rightDrive2.setInverted(true);
+  outtake.setInverted(true);
 
   autoCount = 0;
   autoCount2 = 100;
@@ -113,6 +131,7 @@ Double armDownPos = 0.0;
   autoVar4 = true;
   autoVar5 = true;
   autoVar6 = true; 
+
   }
 
   /**
@@ -125,18 +144,53 @@ Double armDownPos = 0.0;
   @Override
   public void robotPeriodic() {
 
+System.out.println(leftArm.getMotorOutputPercent());
     myPID.setPID(p, i, d);
-    var midMan = leftArm.getRotorPosition();
-    var armPos = midMan.getValueAsDouble();
-    pidRaw = myPID.calculate(armPos, target);
+    pidRaw = myPID.calculate(leftArm.getSelectedSensorPosition(), target);
 
-leftArm.set(pidRaw);
-rightArm.set(-pidRaw);
+if(startingArmPhase && target == armDownPos && leftArm.getSelectedSensorPosition() > 19500){
+leftArm.set(TalonFXControlMode.PercentOutput, 0.0);
+rightArm.set(TalonFXControlMode.PercentOutput, -0.0);
+armVar1 = true;
+}else if(startingArmPhase){
+leftArm.set(TalonFXControlMode.PercentOutput, pidRaw - f);
+rightArm.set(TalonFXControlMode.PercentOutput, -pidRaw + f);
+}
+
+if(armVar1 && startingArmPhase){
+  armPhaseCounter ++;
+  if(armPhaseCounter > 49){
+  leftArm.setSelectedSensorPosition(0.0);
+  rightArm.setSelectedSensorPosition(0.0);
+  armDownPos = -200.0;
+  armUpPos = -24000.0;
+  target = armDownPos;
+startingArmPhase = false;
+}
+}
+
+System.out.println(leftArm.getMotorOutputPercent());
+    myPID.setPID(p, i, d);
+    pidRaw = myPID.calculate(leftArm.getSelectedSensorPosition(), target);
 
 
-leftEncoder1 = leftDrive1.getEncoder();
-rightEncoder1 = rightDrive1.getEncoder();
+if(!startingArmPhase && target == armDownPos && leftArm.getSelectedSensorPosition() > -2000){
+leftArm.set(TalonFXControlMode.PercentOutput, 0.0);
+rightArm.set(TalonFXControlMode.PercentOutput, -0.0);
 
+  }else if(!startingArmPhase){
+leftArm.set(TalonFXControlMode.PercentOutput, pidRaw - f);
+rightArm.set(TalonFXControlMode.PercentOutput, -pidRaw + f);
+  }
+// leftArm.set(TalonFXControlMode.PercentOutput, pidRaw - f);
+// rightArm.set(TalonFXControlMode.PercentOutput, -pidRaw + f);
+
+
+SmartDashboard.putNumber("target", target);
+SmartDashboard.putNumber("Left Arm Position", leftArm.getSelectedSensorPosition());
+SmartDashboard.putNumber("Right Arm Position", -1 * rightArm.getSelectedSensorPosition());
+SmartDashboard.putNumber("Left Encoder", leftDrive1.getEncoder().getPosition());
+SmartDashboard.putNumber("Right Encoder", rightDrive1.getEncoder().getPosition());
   }
 
 
@@ -170,18 +224,18 @@ rightEncoder1 = rightDrive1.getEncoder();
       case red2Note:
         // Position 1, score 2 notes
         // 1,027 ticks is 54.5 inches 
-        if (rightEncoder1.getPosition() > -1027 && autoVar1) {
+        if (rightDrive1.getEncoder().getPosition() > -1027 && autoVar1) {
           target = armUpPos;
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(rightEncoder1.getPosition() > -1349 && autoVar1) {
+        } else if(rightDrive1.getEncoder().getPosition() > -1349 && autoVar1) {
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(rightEncoder1.getPosition() > -1675 && autoVar1){
+        } else if(rightDrive1.getEncoder().getPosition() > -1675 && autoVar1){
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
@@ -194,9 +248,9 @@ rightEncoder1 = rightDrive1.getEncoder();
           rightDrive1.set(0);
           rightDrive2.set(0);
         }else if(autoCount2 < 55 && autoVar1){
-          outtake.set(1);
+          outtake.set(TalonSRXControlMode.PercentOutput,1);
         }else if(autoVar1){
-          outtake.set(0);
+          outtake.set(TalonSRXControlMode.PercentOutput,0);
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(0.5);
@@ -205,14 +259,14 @@ rightEncoder1 = rightDrive1.getEncoder();
         }
 
 
-        if(!autoVar1 && rightEncoder1.getPosition() > -1138 && autoVar2){
+        if(!autoVar1 && rightDrive1.getEncoder().getPosition() > -1138 && autoVar2){
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(!autoVar1 && rightEncoder1.getPosition() < -1460 && autoVar2){
+        } else if(!autoVar1 && rightDrive1.getEncoder().getPosition() < -1460 && autoVar2){
           target = armDownPos;
-          intake.set(1);
+          intake.set(TalonSRXControlMode.PercentOutput,1);
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(0.5);
@@ -222,14 +276,14 @@ rightEncoder1 = rightDrive1.getEncoder();
         }
 
 
-        if (!autoVar2 && rightEncoder1.getPosition() > -1000 && autoVar3) {
+        if (!autoVar2 && rightDrive1.getEncoder().getPosition() > -1000 && autoVar3) {
           target = armUpPos;
-          intake.set(0);
+          intake.set(TalonSRXControlMode.PercentOutput,0);
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(!autoVar2 && rightEncoder1.getPosition() < -1460 && autoVar3){
+        } else if(!autoVar2 && rightDrive1.getEncoder().getPosition() < -1460 && autoVar3){
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(0.5);
@@ -238,21 +292,21 @@ rightEncoder1 = rightDrive1.getEncoder();
         }
 
 
-        if (!autoVar3 && rightEncoder1.getPosition() > -1138) {
+        if (!autoVar3 && rightDrive1.getEncoder().getPosition() > -1138) {
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(!autoVar3 && rightEncoder1.getPosition() < -1675){
+        } else if(!autoVar3 && rightDrive1.getEncoder().getPosition() < -1675){
           // Arrived at the Amp again
           leftDrive1.set(0);
           leftDrive2.set(0);
           rightDrive1.set(0);
           rightDrive2.set(0);
-          outtake.set(1);
+          outtake.set(TalonSRXControlMode.PercentOutput,1);
           autoCount2 = 0;
         } else if(!autoVar3 && autoCount2 > 35){
-          outtake.set(0);
+          outtake.set(TalonSRXControlMode.PercentOutput,0);
           // Everything turns off, we're all done.
           // (Or are we?)
         }
@@ -261,18 +315,18 @@ rightEncoder1 = rightDrive1.getEncoder();
       case red3Note:
   // Position 1, score 2 notes, pick up third 
         // 1,027 ticks is 54.5 inches 
-        if (rightEncoder1.getPosition() > -1027 && autoVar1) {
+        if (rightDrive1.getEncoder().getPosition() > -1027 && autoVar1) {
           target = armUpPos;
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(rightEncoder1.getPosition() > -1349 && autoVar1) {
+        } else if(rightDrive1.getEncoder().getPosition() > -1349 && autoVar1) {
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(rightEncoder1.getPosition() > -1675 && autoVar1){
+        } else if(rightDrive1.getEncoder().getPosition() > -1675 && autoVar1){
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
@@ -285,9 +339,9 @@ rightEncoder1 = rightDrive1.getEncoder();
           rightDrive1.set(0);
           rightDrive2.set(0);
         }else if(autoCount2 < 55 && autoVar1){
-          outtake.set(1);
+          outtake.set(TalonSRXControlMode.PercentOutput,1);
         }else if(autoVar1){
-          outtake.set(0);
+          outtake.set(TalonSRXControlMode.PercentOutput,0);
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(0.5);
@@ -296,14 +350,14 @@ rightEncoder1 = rightDrive1.getEncoder();
         }
 
 
-        if(!autoVar1 && rightEncoder1.getPosition() > -1138 && autoVar2){
+        if(!autoVar1 && rightDrive1.getEncoder().getPosition() > -1138 && autoVar2){
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(!autoVar1 && rightEncoder1.getPosition() < -1460 && autoVar2){
+        } else if(!autoVar1 && rightDrive1.getEncoder().getPosition() < -1460 && autoVar2){
           target = armDownPos;
-          intake.set(1);
+          intake.set(TalonSRXControlMode.PercentOutput,1);
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(0.5);
@@ -313,14 +367,14 @@ rightEncoder1 = rightDrive1.getEncoder();
         }
 
 
-        if (!autoVar2 && rightEncoder1.getPosition() > -1000 && autoVar3) {
+        if (!autoVar2 && rightDrive1.getEncoder().getPosition() > -1000 && autoVar3) {
           target = armUpPos;
-          intake.set(0);
+          intake.set(TalonSRXControlMode.PercentOutput,0);
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(!autoVar2 && rightEncoder1.getPosition() < -1460 && autoVar3){
+        } else if(!autoVar2 && rightDrive1.getEncoder().getPosition() < -1460 && autoVar3){
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(0.5);
@@ -329,21 +383,21 @@ rightEncoder1 = rightDrive1.getEncoder();
         }
 
 
-        if (!autoVar3 && rightEncoder1.getPosition() > -1138 && autoVar4) {
+        if (!autoVar3 && rightDrive1.getEncoder().getPosition() > -1138 && autoVar4) {
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(!autoVar3 && rightEncoder1.getPosition() < -1675 && autoVar4){
+        } else if(!autoVar3 && rightDrive1.getEncoder().getPosition() < -1675 && autoVar4){
           // Arrived at the Amp again
           leftDrive1.set(0);
           leftDrive2.set(0);
           rightDrive1.set(0);
           rightDrive2.set(0);
-          outtake.set(1);
+          outtake.set(TalonSRXControlMode.PercentOutput,1);
           autoCount2 = 0;
         } else if(!autoVar3 && autoCount2 > 35 && autoVar4){
-          outtake.set(0);
+          outtake.set(TalonSRXControlMode.PercentOutput,0);
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
@@ -351,28 +405,28 @@ rightEncoder1 = rightDrive1.getEncoder();
           autoVar4 = false;
         }
 
-        if (!autoVar4 && rightEncoder1.getPosition() > -54 && autoVar5) {
+        if (!autoVar4 && rightDrive1.getEncoder().getPosition() > -54 && autoVar5) {
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(0.5);
           rightDrive2.set(0.5);
-        } else if(!autoVar4 && rightEncoder1.getPosition() < -376 && autoVar5){
+        } else if(!autoVar4 && rightDrive1.getEncoder().getPosition() < -376 && autoVar5){
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
           target = armDownPos;
-          intake.set(1);
+          intake.set(TalonSRXControlMode.PercentOutput,1);
           autoVar5 = false;
         }
 
-        if (!autoVar5 && rightEncoder1.getPosition() > 84 && autoVar6) {
+        if (!autoVar5 && rightDrive1.getEncoder().getPosition() > 84 && autoVar6) {
           target = armUpPos;
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(!autoVar5 && rightEncoder1.getPosition() < -376 && autoVar6) {
+        } else if(!autoVar5 && rightDrive1.getEncoder().getPosition() < -376 && autoVar6) {
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(0.5);
@@ -380,21 +434,21 @@ rightEncoder1 = rightDrive1.getEncoder();
           autoVar6 = false;
         }
 
-        if (!autoVar6 && rightEncoder1.getPosition() > -54) {
+        if (!autoVar6 && rightDrive1.getEncoder().getPosition() > -54) {
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(!autoVar6 && rightEncoder1.getPosition() < -1675) {
+        } else if(!autoVar6 && rightDrive1.getEncoder().getPosition() < -1675) {
           leftDrive1.set(0);
           leftDrive2.set(0);
           rightDrive1.set(0);
           rightDrive2.set(0);
           autoCount2 = 0;
         } else if(!autoVar6 && autoCount2 > 15){
-          outtake.set(1);
+          outtake.set(TalonSRXControlMode.PercentOutput,1);
         } else if(!autoVar6 && autoCount2 > 45){
-          outtake.set(0);
+          outtake.set(TalonSRXControlMode.PercentOutput,0);
         }
 
       break;
@@ -402,18 +456,18 @@ rightEncoder1 = rightDrive1.getEncoder();
 
       case red1Note:
         // Position 1, score 1 note, leave zone last second
-  if (rightEncoder1.getPosition() > -1027 && autoVar1) {
+  if (rightDrive1.getEncoder().getPosition() > -1027 && autoVar1) {
           target = armUpPos;
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(rightEncoder1.getPosition() > -1349 && autoVar1) {
+        } else if(rightDrive1.getEncoder().getPosition() > -1349 && autoVar1) {
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(rightEncoder1.getPosition() > -1675 && autoVar1){
+        } else if(rightDrive1.getEncoder().getPosition() > -1675 && autoVar1){
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
@@ -426,9 +480,9 @@ rightEncoder1 = rightDrive1.getEncoder();
           rightDrive1.set(0);
           rightDrive2.set(0);
         }else if(autoCount2 < 55 && autoVar1){
-          outtake.set(1);
+          outtake.set(TalonSRXControlMode.PercentOutput,1);
         }else if(autoVar1){
-          outtake.set(0);
+          outtake.set(TalonSRXControlMode.PercentOutput,0);
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(0.5);
@@ -437,17 +491,17 @@ rightEncoder1 = rightDrive1.getEncoder();
         }
 
 
-        if (!autoVar1 && rightEncoder1.getPosition() < -1450) {
+        if (!autoVar1 && rightDrive1.getEncoder().getPosition() < -1450) {
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(!autoVar1 && rightEncoder1.getPosition() < -1772){
+        } else if(!autoVar1 && rightDrive1.getEncoder().getPosition() < -1772){
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(!autoVar1 && rightEncoder1.getPosition() < -2900){
+        } else if(!autoVar1 && rightDrive1.getEncoder().getPosition() < -2900){
           // Robot stops against back wall, waits, biding its time
           leftDrive1.set(0);
           leftDrive2.set(0);
@@ -474,33 +528,33 @@ rightEncoder1 = rightDrive1.getEncoder();
       // that is running a 5, 6, 7 note auto
 
 
-        if (leftEncoder1.getPosition() < 500) {
+        if (leftDrive1.getEncoder().getPosition() < 500) {
           target = armUpPos;
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(0.5);
           rightDrive2.set(0.5);
-          outtake.set(1);
-        }else if(leftEncoder1.getPosition() < 3054){
+          outtake.set(TalonSRXControlMode.PercentOutput,1);
+        }else if(leftDrive1.getEncoder().getPosition() < 3054){
           leftDrive1.set(1);
           leftDrive2.set(1);
           rightDrive1.set(1);
           rightDrive2.set(1);
-          outtake.set(0);
+          outtake.set(TalonSRXControlMode.PercentOutput,0);
           target = armDownPos;
-        } else if(leftEncoder1.getPosition() < 5090){
+        } else if(leftDrive1.getEncoder().getPosition() < 5090){
           leftDrive1.set(1);
           leftDrive2.set(1);
           rightDrive1.set(.872);
           rightDrive2.set(.872);
-          intake.set(1);
-        }else if(leftEncoder1.getPosition() < 7000){
+          intake.set(TalonSRXControlMode.PercentOutput,1);
+        }else if(leftDrive1.getEncoder().getPosition() < 7000){
           leftDrive1.set(1);
           leftDrive2.set(1);
           rightDrive1.set(1);
           rightDrive2.set(1);
-        }else if(leftEncoder1.getPosition() < 8257){
-          intake.set(0);
+        }else if(leftDrive1.getEncoder().getPosition() < 8257){
+          intake.set(TalonSRXControlMode.PercentOutput,0);
         }else{
           leftDrive1.set(0);
           leftDrive2.set(0);
@@ -513,32 +567,32 @@ rightEncoder1 = rightDrive1.getEncoder();
 
       case redPushMiddle2:
       // annoying auto, starting in pos 2
-      if(leftEncoder1.getPosition() < 500){
+      if(leftDrive1.getEncoder().getPosition() < 500){
         leftDrive1.set(0.5);
         leftDrive2.set(0.5);
         rightDrive1.set(0.5);
         rightDrive2.set(0.5);
         target = armUpPos;
-        outtake.set(1);
-      } else if(leftEncoder1.getPosition() < 2036){
+        outtake.set(TalonSRXControlMode.PercentOutput,1);
+      } else if(leftDrive1.getEncoder().getPosition() < 2036){
         target = armDownPos;
-        outtake.set(0);
+        outtake.set(TalonSRXControlMode.PercentOutput,0);
         leftDrive1.set(1);
         leftDrive2.set(1);
         rightDrive1.set(1);
         rightDrive2.set(1);
-      }else if(leftEncoder1.getPosition() < 6300){
+      }else if(leftDrive1.getEncoder().getPosition() < 6300){
         leftDrive1.set(1);
         leftDrive2.set(1);
         rightDrive1.set(0.938);
         rightDrive2.set(0.938);
-        intake.set(1);
-      }else if(leftEncoder1.getPosition() < 7667){
+        intake.set(TalonSRXControlMode.PercentOutput,1);
+      }else if(leftDrive1.getEncoder().getPosition() < 7667){
         leftDrive1.set(1);
         leftDrive2.set(1);
         rightDrive1.set(1);
         rightDrive2.set(1);
-        intake.set(0);
+        intake.set(TalonSRXControlMode.PercentOutput,0);
       }else{
         leftDrive1.set(0);
         leftDrive2.set(0);
@@ -556,7 +610,7 @@ rightEncoder1 = rightDrive1.getEncoder();
         // about 1800 tics is a solid backup
 
         //Drive Straight Forward 8 ft
-        if (leftEncoder1.getPosition() < 1800) {
+        if (leftDrive1.getEncoder().getPosition() < 1800) {
           target = armDownPos;
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
@@ -573,18 +627,18 @@ rightEncoder1 = rightDrive1.getEncoder();
       case blue2Note:
   // Position 1, score 2 notes
         // 1,027 ticks is 54.5 inches 
-        if (leftEncoder1.getPosition() > -1027 && autoVar1) {
+        if (leftDrive1.getEncoder().getPosition() > -1027 && autoVar1) {
           target = armUpPos;
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(leftEncoder1.getPosition() > -1349 && autoVar1) {
+        } else if(leftDrive1.getEncoder().getPosition() > -1349 && autoVar1) {
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(0.5);
           rightDrive2.set(0.5);
-        } else if(leftEncoder1.getPosition() > -1675 && autoVar1){
+        } else if(leftDrive1.getEncoder().getPosition() > -1675 && autoVar1){
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
@@ -597,9 +651,9 @@ rightEncoder1 = rightDrive1.getEncoder();
           rightDrive1.set(0);
           rightDrive2.set(0);
         }else if(autoCount2 < 55 && autoVar1){
-          outtake.set(1);
+          outtake.set(TalonSRXControlMode.PercentOutput,1);
         }else if(autoVar1){
-          outtake.set(0);
+          outtake.set(TalonSRXControlMode.PercentOutput,0);
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(0.5);
@@ -608,14 +662,14 @@ rightEncoder1 = rightDrive1.getEncoder();
         }
 
 
-        if(!autoVar1 && leftEncoder1.getPosition() > -1138 && autoVar2){
+        if(!autoVar1 && leftDrive1.getEncoder().getPosition() > -1138 && autoVar2){
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(0.5);
           rightDrive2.set(0.5);
-        } else if(!autoVar1 && leftEncoder1.getPosition() < -1460 && autoVar2){
+        } else if(!autoVar1 && leftDrive1.getEncoder().getPosition() < -1460 && autoVar2){
           target = armDownPos;
-          intake.set(1);
+          intake.set(TalonSRXControlMode.PercentOutput,1);
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(0.5);
@@ -625,37 +679,37 @@ rightEncoder1 = rightDrive1.getEncoder();
         }
 
 
-        if (!autoVar2 && leftEncoder1.getPosition() > -1000 && autoVar3) {
+        if (!autoVar2 && leftDrive1.getEncoder().getPosition() > -1000 && autoVar3) {
           target = armUpPos;
-          intake.set(0);
+          intake.set(TalonSRXControlMode.PercentOutput,0);
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(!autoVar2 && rightEncoder1.getPosition() < -1460 && autoVar3){
+        } else if(!autoVar2 && rightDrive1.getEncoder().getPosition() < -1460 && autoVar3){
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
           autoVar3 = false;
         }
+ 
 
-
-        if (!autoVar3 && leftEncoder1.getPosition() > -1138) {
+        if (!autoVar3 && leftDrive1.getEncoder().getPosition() > -1138) {
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(!autoVar3 && leftEncoder1.getPosition() < -1675){
+        } else if(!autoVar3 && leftDrive1.getEncoder().getPosition() < -1675){
           // Arrived at the Amp again
           leftDrive1.set(0);
           leftDrive2.set(0);
           rightDrive1.set(0);
           rightDrive2.set(0);
-          outtake.set(1);
+          outtake.set(TalonSRXControlMode.PercentOutput,1);
           autoCount2 = 0;
         } else if(autoCount2 > 35){
-          outtake.set(0);
+          outtake.set(TalonSRXControlMode.PercentOutput,0);
           // Everything turns off, we're all done.
           // (Or are we?)
         }
@@ -665,18 +719,18 @@ rightEncoder1 = rightDrive1.getEncoder();
       case blue3Note:
  // Position 1, score 2 notes
         // 1,027 ticks is 54.5 inches 
-        if (leftEncoder1.getPosition() > -1027 && autoVar1) {
+        if (leftDrive1.getEncoder().getPosition() > -1027 && autoVar1) {
           target = armUpPos;
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(leftEncoder1.getPosition() > -1349 && autoVar1) {
+        } else if(leftDrive1.getEncoder().getPosition() > -1349 && autoVar1) {
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(0.5);
           rightDrive2.set(0.5);
-        } else if(leftEncoder1.getPosition() > -1675 && autoVar1){
+        } else if(leftDrive1.getEncoder().getPosition() > -1675 && autoVar1){
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
@@ -689,9 +743,9 @@ rightEncoder1 = rightDrive1.getEncoder();
           rightDrive1.set(0);
           rightDrive2.set(0);
         }else if(autoCount2 < 55 && autoVar1){
-          outtake.set(1);
+          outtake.set(TalonSRXControlMode.PercentOutput,1);
         }else if(autoVar1){
-          outtake.set(0);
+          outtake.set(TalonSRXControlMode.PercentOutput,0);
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(0.5);
@@ -700,14 +754,14 @@ rightEncoder1 = rightDrive1.getEncoder();
         }
 
 
-        if(!autoVar1 && leftEncoder1.getPosition() > -1138 && autoVar2){
+        if(!autoVar1 && leftDrive1.getEncoder().getPosition() > -1138 && autoVar2){
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(0.5);
           rightDrive2.set(0.5);
-        } else if(!autoVar1 && leftEncoder1.getPosition() < -1460 && autoVar2){
+        } else if(!autoVar1 && leftDrive1.getEncoder().getPosition() < -1460 && autoVar2){
           target = armDownPos;
-          intake.set(1);
+          intake.set(TalonSRXControlMode.PercentOutput,1);
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(0.5);
@@ -717,14 +771,14 @@ rightEncoder1 = rightDrive1.getEncoder();
         }
 
 
-        if (!autoVar2 && leftEncoder1.getPosition() > -1000 && autoVar3) {
+        if (!autoVar2 && leftDrive1.getEncoder().getPosition() > -1000 && autoVar3) {
           target = armUpPos;
-          intake.set(0);
+          intake.set(TalonSRXControlMode.PercentOutput,0);
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(!autoVar2 && rightEncoder1.getPosition() < -1460 && autoVar3){
+        } else if(!autoVar2 && rightDrive1.getEncoder().getPosition() < -1460 && autoVar3){
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(-0.5);
@@ -733,45 +787,45 @@ rightEncoder1 = rightDrive1.getEncoder();
         }
 
 
-        if (!autoVar3 && leftEncoder1.getPosition() > -1138) {
+        if (!autoVar3 && leftDrive1.getEncoder().getPosition() > -1138) {
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(!autoVar3 && leftEncoder1.getPosition() < -1675){
+        } else if(!autoVar3 && leftDrive1.getEncoder().getPosition() < -1675){
           // Arrived at the Amp again
           leftDrive1.set(0);
           leftDrive2.set(0);
           rightDrive1.set(0);
           rightDrive2.set(0);
-          outtake.set(1);
+          outtake.set(TalonSRXControlMode.PercentOutput,1);
           autoCount2 = 0;
         } else if(autoCount2 > 35){
-          outtake.set(0);
+          outtake.set(TalonSRXControlMode.PercentOutput,0);
         }
 
-        if (!autoVar4 && leftEncoder1.getPosition() > -54 && autoVar5) {
+        if (!autoVar4 && leftDrive1.getEncoder().getPosition() > -54 && autoVar5) {
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(0.5);
           rightDrive2.set(0.5);
-        } else if(!autoVar4 && leftEncoder1.getPosition() < -376 && autoVar5){
+        } else if(!autoVar4 && leftDrive1.getEncoder().getPosition() < -376 && autoVar5){
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(0.5);
           rightDrive2.set(0.5);
           target = armDownPos;
-          intake.set(1);
+          intake.set(TalonSRXControlMode.PercentOutput,1);
           autoVar5 = false;
         }
 
-        if (!autoVar5 && leftEncoder1.getPosition() > 84 && autoVar6) {
+        if (!autoVar5 && leftDrive1.getEncoder().getPosition() > 84 && autoVar6) {
           target = armUpPos;
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(!autoVar5 && leftEncoder1.getPosition() < -376 && autoVar6) {
+        } else if(!autoVar5 && leftDrive1.getEncoder().getPosition() < -376 && autoVar6) {
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(-0.5);
@@ -779,21 +833,21 @@ rightEncoder1 = rightDrive1.getEncoder();
           autoVar6 = false;
         }
 
-        if (!autoVar6 && leftEncoder1.getPosition() > -54) {
+        if (!autoVar6 && leftDrive1.getEncoder().getPosition() > -54) {
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(!autoVar6 && leftEncoder1.getPosition() < -1675) {
+        } else if(!autoVar6 && leftDrive1.getEncoder().getPosition() < -1675) {
           leftDrive1.set(0);
           leftDrive2.set(0);
           rightDrive1.set(0);
           rightDrive2.set(0);
           autoCount2 = 0;
         } else if(!autoVar6 && autoCount2 > 15){
-          outtake.set(1);
+          outtake.set(TalonSRXControlMode.PercentOutput,1);
         } else if(!autoVar6 && autoCount2 > 45){
-          outtake.set(0);
+          outtake.set(TalonSRXControlMode.PercentOutput,0);
         }
 
       break;
@@ -801,18 +855,18 @@ rightEncoder1 = rightDrive1.getEncoder();
 
       case blue1Note:
 // Position 1, score 1 note, leave zone last second
-  if (leftEncoder1.getPosition() > -1027 && autoVar1) {
+  if (leftDrive1.getEncoder().getPosition() > -1027 && autoVar1) {
           target = armUpPos;
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(leftEncoder1.getPosition() > -1349 && autoVar1) {
+        } else if(leftDrive1.getEncoder().getPosition() > -1349 && autoVar1) {
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(0.5);
           rightDrive2.set(0.5);
-        } else if(leftEncoder1.getPosition() > -1675 && autoVar1){
+        } else if(leftDrive1.getEncoder().getPosition() > -1675 && autoVar1){
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
@@ -825,9 +879,9 @@ rightEncoder1 = rightDrive1.getEncoder();
           rightDrive1.set(0);
           rightDrive2.set(0);
         }else if(autoCount2 < 55 && autoVar1){
-          outtake.set(1);
+          outtake.set(TalonSRXControlMode.PercentOutput,1);
         }else if(autoVar1){
-          outtake.set(0);
+          outtake.set(TalonSRXControlMode.PercentOutput,0);
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(0.5);
@@ -836,17 +890,17 @@ rightEncoder1 = rightDrive1.getEncoder();
         }
 
 
-        if (!autoVar1 && leftEncoder1.getPosition() < -1450) {
+        if (!autoVar1 && leftDrive1.getEncoder().getPosition() < -1450) {
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(0.5);
           rightDrive2.set(0.5);
-        } else if(!autoVar1 && leftEncoder1.getPosition() < -1772){
+        } else if(!autoVar1 && leftDrive1.getEncoder().getPosition() < -1772){
           leftDrive1.set(-0.5);
           leftDrive2.set(-0.5);
           rightDrive1.set(-0.5);
           rightDrive2.set(-0.5);
-        } else if(!autoVar1 && leftEncoder1.getPosition() < -2900){
+        } else if(!autoVar1 && leftDrive1.getEncoder().getPosition() < -2900){
           // Robot stops against back wall, waits, biding its time
           leftDrive1.set(0);
           leftDrive2.set(0);
@@ -872,33 +926,33 @@ rightEncoder1 = rightDrive1.getEncoder();
       // that is running a 5, 6, 7 note auto
 
 
-        if (rightEncoder1.getPosition() < 500) {
+        if (rightDrive1.getEncoder().getPosition() < 500) {
           target = armUpPos;
           leftDrive1.set(0.5);
           leftDrive2.set(0.5);
           rightDrive1.set(0.5);
           rightDrive2.set(0.5);
-          outtake.set(1);
-        }else if(rightEncoder1.getPosition() < 3054){
+          outtake.set(TalonSRXControlMode.PercentOutput,1);
+        }else if(rightDrive1.getEncoder().getPosition() < 3054){
           target = armDownPos;
           leftDrive1.set(1);
           leftDrive2.set(1);
           rightDrive1.set(1);
           rightDrive2.set(1);
-          outtake.set(0);
-        } else if(rightEncoder1.getPosition() < 5090){
+          outtake.set(TalonSRXControlMode.PercentOutput,0);
+        } else if(rightDrive1.getEncoder().getPosition() < 5090){
           leftDrive1.set(.872);
           leftDrive2.set(.872);
           rightDrive1.set(1);
           rightDrive2.set(1);
-          intake.set(1);
-        }else if(rightEncoder1.getPosition() < 7000){
+          intake.set(TalonSRXControlMode.PercentOutput,1);
+        }else if(rightDrive1.getEncoder().getPosition() < 7000){
           leftDrive1.set(1);
           leftDrive2.set(1);
           rightDrive1.set(1);
           rightDrive2.set(1);
-        }else if(rightEncoder1.getPosition() < 8257){
-          intake.set(0);
+        }else if(rightDrive1.getEncoder().getPosition() < 8257){
+          intake.set(TalonSRXControlMode.PercentOutput,0);
         }else{
           leftDrive1.set(0);
           leftDrive2.set(0);
@@ -910,32 +964,32 @@ rightEncoder1 = rightDrive1.getEncoder();
 
       case bluePushMiddle2:
 // annoying auto, starting in pos 2
-      if(rightEncoder1.getPosition() < 500){
+      if(rightDrive1.getEncoder().getPosition() < 500){
         target = armUpPos;
-        outtake.set(1);
+        outtake.set(TalonSRXControlMode.PercentOutput,1);
         leftDrive1.set(0.5);
         leftDrive2.set(0.5);
         rightDrive1.set(0.5);
         rightDrive2.set(0.5);
-      }else if(rightEncoder1.getPosition() < 2036){
+      }else if(rightDrive1.getEncoder().getPosition() < 2036){
         target = armDownPos;
-        outtake.set(0);
+        outtake.set(TalonSRXControlMode.PercentOutput,0);
         leftDrive1.set(1);
         leftDrive2.set(1);
         rightDrive1.set(1);
         rightDrive2.set(1);
-      } else if(rightEncoder1.getPosition() < 6300){
+      } else if(rightDrive1.getEncoder().getPosition() < 6300){
         leftDrive1.set(0.938);
         leftDrive2.set(0.938);
         rightDrive1.set(1);
         rightDrive2.set(1);
-        intake.set(1);
-      }else if(rightEncoder1.getPosition() < 7667){
+        intake.set(TalonSRXControlMode.PercentOutput,1);
+      }else if(rightDrive1.getEncoder().getPosition() < 7667){
         leftDrive1.set(1);
         leftDrive2.set(1);
         rightDrive1.set(1);
         rightDrive2.set(1);
-        intake.set(0);
+        intake.set(TalonSRXControlMode.PercentOutput,0);
       }else{
         leftDrive1.set(0);
         leftDrive2.set(0);
@@ -967,17 +1021,17 @@ autoCount2++;
 if(joyDrive.getRawAxis(1) > -0.1 && joyDrive.getRawAxis(1) < 0.1){
 driveSpeedLeft = 0.0;
 }else if(joyDrive.getRawAxis(1) < 0){
-driveSpeedLeft = joyDrive.getRawAxis(1) * joyDrive.getRawAxis(1) * -1;
-}else{
 driveSpeedLeft = joyDrive.getRawAxis(1) * joyDrive.getRawAxis(1);
+}else{
+driveSpeedLeft = joyDrive.getRawAxis(1) * joyDrive.getRawAxis(1) * -1;
 }
 
 if(joyDrive.getRawAxis(5) > -0.1 && joyDrive.getRawAxis(5) < 0.1){
 driveSpeedRight = 0.0;
 }else if(joyDrive.getRawAxis(5) < 0){
-driveSpeedRight = joyDrive.getRawAxis(5) * joyDrive.getRawAxis(5) * -1;
-}else{
 driveSpeedRight = joyDrive.getRawAxis(5) * joyDrive.getRawAxis(5);
+}else{
+driveSpeedRight = joyDrive.getRawAxis(5) * joyDrive.getRawAxis(5) * -1;
 }
 
 if(joyDrive.getRawButton(1)){
@@ -996,15 +1050,15 @@ leftDrive2.set(driveSpeedLeft);
 
 // Intake & Outtake code
 if (joyButtons.getRawButton(2)) {
-  intake.set(1);
+  intake.set(TalonSRXControlMode.PercentOutput,1);
 } else {
-    intake.set(0);
+    intake.set(TalonSRXControlMode.PercentOutput,0);
 }
 
 if (joyButtons.getRawButton(1)) {
-  outtake.set(1);
+  outtake.set(TalonSRXControlMode.PercentOutput,1);
 } else {
-    outtake.set(0);
+    outtake.set(TalonSRXControlMode.PercentOutput,0);
 }
 
 
@@ -1014,14 +1068,16 @@ if (joyButtons.getRawButton(8)) {
   target = armUpPos;
 } else if(joyButtons.getRawButton(7)){
   target = armDownPos;
-}
-  } else if(joyButtons.getRawButton(11)){
-    if(joyButtons.getRawAxis(1) == -1){
-      target += 50;
-    } else if(joyButtons.getRawAxis(1) == 1){
-      target -= 50;
-    }
   }
+} 
+//      else if(joyButtons.getRawButton(11)){
+//     if(joyButtons.getRawAxis(1) == -1){
+//       target += 50;
+//     } else if(joyButtons.getRawAxis(1) == 1){
+//       target -= 50;
+//     }
+//   }
+
 }
 
   /** This function is called once when the robot is disabled. */
@@ -1035,7 +1091,11 @@ if (joyButtons.getRawButton(8)) {
   public void testInit() {}
   /** This function is called periodically during test mode. */
   @Override
-  public void testPeriodic() {}
+  public void testPeriodic() {
+leftArm.set(TalonFXControlMode.PercentOutput, joyDrive.getRawAxis(1) * -0.5);
+rightArm.set(TalonFXControlMode.PercentOutput, joyDrive.getRawAxis(1) * 0.5);
+
+  }
   /** This function is called once when the robot is first started up. */
   @Override
   public void simulationInit() {}
