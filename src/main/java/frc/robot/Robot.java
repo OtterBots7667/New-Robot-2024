@@ -76,8 +76,10 @@ Boolean autoVar4 = true;
 Boolean autoVar5 = true;
 Boolean autoVar6 = true;
 int autoSequence = 0;
+int autoSequence2 = 0;
 Boolean autoBoo = true;
 Double autoEncoderVar;
+Double autoEncoderVar2;
 
 //PID variables
 Double f = 0.1149;
@@ -136,6 +138,7 @@ Boolean armVar1 = false;
   autoVar5 = true;
   autoVar6 = true; 
   autoSequence = 0;
+  autoSequence2 = 0;
   }
 
   /**
@@ -314,7 +317,7 @@ SmartDashboard.putNumber("left motor percent", leftArm.getMotorOutputPercent());
           rightDrive2.set(-0.25);
           autoSequence = 3;
           autoCount = 0;
-        } else if(!autoVar3 && autoSequence == 3 && autoCount < 350 && rightDrive1.getEncoder().getPosition() < autoEncoderVar - 36.8){
+        } else if(!autoVar3 && autoSequence == 3 && autoCount < 250 && rightDrive1.getEncoder().getPosition() < autoEncoderVar - 20){
           // Arrived at the Amp again
           if(autoBoo){
             autoCount = 0;
@@ -326,11 +329,21 @@ SmartDashboard.putNumber("left motor percent", leftArm.getMotorOutputPercent());
           rightDrive2.set(-0.1);
           outtake.set(TalonSRXControlMode.PercentOutput,1);
           intake.set(TalonSRXControlMode.PercentOutput,1);
-        } else if(!autoVar3){
+          autoEncoderVar2 = rightDrive1.getEncoder().getPosition();
+          autoSequence2 = 1;
+        } else if(!autoVar3 && rightDrive1.getEncoder().getPosition() > autoEncoderVar2 - 10 && autoSequence2 == 1){
           outtake.set(TalonSRXControlMode.PercentOutput,0);
           intake.set(TalonSRXControlMode.PercentOutput,0);
-          // Everything turns off, we're all done.
-          // (Or are we?)
+          leftDrive1.set(0.25);
+          leftDrive2.set(0.25);
+          rightDrive1.set(-0.25);
+          rightDrive2.set(-0.25);
+          autoSequence = 5;
+        }else if(!autoVar3 && autoSequence == 5){
+          leftDrive1.set(0.25);
+          leftDrive2.set(0.25);
+          rightDrive1.set(0.25);
+          rightDrive2.set(0.25);
         }
       break;
 
@@ -723,7 +736,7 @@ SmartDashboard.putNumber("left motor percent", leftArm.getMotorOutputPercent());
           rightDrive2.set(-0.25);
           autoSequence = 3;
           autoCount = 0;
-        } else if(!autoVar3 && autoSequence == 3 && autoCount < 350 && leftDrive1.getEncoder().getPosition() < autoEncoderVar - 36.8){
+        } else if(!autoVar3 && autoSequence == 3 && autoCount < 250 && leftDrive1.getEncoder().getPosition() < autoEncoderVar - 20){
           // Arrived at the Amp again
           if(autoBoo){
             autoCount = 0;
