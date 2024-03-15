@@ -273,13 +273,13 @@ SmartDashboard.putNumber("left motor percent", leftArm.getMotorOutputPercent());
         }
 
 
-        if(!autoVar1 && rightDrive1.getEncoder().getPosition() > -47.0 && autoVar2){
+        if(!autoVar1 && rightDrive1.getEncoder().getPosition() > autoEncoderVar + 2.2 && autoVar2){
           leftDrive1.set(0.25);
           leftDrive2.set(0.25);
           rightDrive1.set(-0.25);
           rightDrive2.set(-0.25);
           autoSequence = 1;
-        } else if(!autoVar1 && rightDrive1.getEncoder().getPosition() < -56.0 && autoVar2 && autoSequence == 1){
+        } else if(!autoVar1 && rightDrive1.getEncoder().getPosition() < autoEncoderVar - 6.8 && autoVar2 && autoSequence == 1){
           intake.set(TalonSRXControlMode.PercentOutput,1);
           leftDrive1.set(0.25);
           leftDrive2.set(0.25);
@@ -290,14 +290,14 @@ SmartDashboard.putNumber("left motor percent", leftArm.getMotorOutputPercent());
         }
 
 
-        if (!autoVar2 && rightDrive1.getEncoder().getPosition() > -45.0 && autoVar3) {
+        if (!autoVar2 && rightDrive1.getEncoder().getPosition() > autoEncoderVar + 4.2 && autoVar3) {
           intake.set(TalonSRXControlMode.PercentOutput,0);
           leftDrive1.set(-0.25);
           leftDrive2.set(-0.25);
           rightDrive1.set(-0.25);
           rightDrive2.set(-0.25);
           autoSequence = 2;
-        } else if(!autoVar2 && rightDrive1.getEncoder().getPosition() < -54.0 && autoVar3 && autoSequence ==2){
+        } else if(!autoVar2 && rightDrive1.getEncoder().getPosition() < autoEncoderVar - 2.8 && autoVar3 && autoSequence ==2){
           leftDrive1.set(-0.25);
           leftDrive2.set(-0.25);
           rightDrive1.set(0.25);
@@ -306,7 +306,7 @@ SmartDashboard.putNumber("left motor percent", leftArm.getMotorOutputPercent());
         }
 
 
-        if (!autoVar3 && rightDrive1.getEncoder().getPosition() > -45.0) {
+        if (!autoVar3 && rightDrive1.getEncoder().getPosition() > autoEncoderVar + 4.2) {
           target = armUpPos;
           leftDrive1.set(-0.25);
           leftDrive2.set(-0.25);
@@ -314,7 +314,7 @@ SmartDashboard.putNumber("left motor percent", leftArm.getMotorOutputPercent());
           rightDrive2.set(-0.25);
           autoSequence = 3;
           autoCount = 0;
-        } else if(!autoVar3 && autoSequence == 3 && autoCount < 350 && rightDrive1.getEncoder().getPosition() < -86.0){
+        } else if(!autoVar3 && autoSequence == 3 && autoCount < 350 && rightDrive1.getEncoder().getPosition() < autoEncoderVar - 36.8){
           // Arrived at the Amp again
           if(autoBoo){
             autoCount = 0;
@@ -662,14 +662,15 @@ SmartDashboard.putNumber("left motor percent", leftArm.getMotorOutputPercent());
           autoCount2 = 0;
         } else if(autoCount2 < 30 && autoVar1){
           // Arrives at Amp
-          leftDrive1.set(0);
-          leftDrive2.set(0);
-          rightDrive1.set(0);
-          rightDrive2.set(0);
+          leftDrive1.set(-0.1);
+          leftDrive2.set(-0.1);
+          rightDrive1.set(-0.1);
+          rightDrive2.set(-0.1);
         }else if(autoCount2 < 65 && autoVar1){
           outtake.set(TalonSRXControlMode.PercentOutput,1);
           intake.set(TalonSRXControlMode.PercentOutput,1);
         }else if(autoVar1){
+          autoEncoderVar = leftDrive1.getEncoder().getPosition();
           outtake.set(TalonSRXControlMode.PercentOutput,0);
           intake.set(TalonSRXControlMode.PercentOutput,0);
           target = armDownPos;
@@ -681,13 +682,13 @@ SmartDashboard.putNumber("left motor percent", leftArm.getMotorOutputPercent());
         }
 
 
-        if(!autoVar1 && leftDrive1.getEncoder().getPosition() > -47.0 && autoVar2){
+        if(!autoVar1 && leftDrive1.getEncoder().getPosition() > autoEncoderVar + 2.2 && autoVar2){
           leftDrive1.set(-0.25);
           leftDrive2.set(-0.25);
           rightDrive1.set(0.25);
           rightDrive2.set(0.25);
           autoSequence = 1;
-        } else if(!autoVar1 && leftDrive1.getEncoder().getPosition() < -56.0 && autoVar2 && autoSequence == 1){
+        } else if(!autoVar1 && leftDrive1.getEncoder().getPosition() < autoEncoderVar - 6.8 && autoVar2 && autoSequence == 1){
           intake.set(TalonSRXControlMode.PercentOutput,1);
           leftDrive1.set(0.25);
           leftDrive2.set(0.25);
@@ -698,14 +699,14 @@ SmartDashboard.putNumber("left motor percent", leftArm.getMotorOutputPercent());
         }
 
 
-        if (!autoVar2 && leftDrive1.getEncoder().getPosition() > -45.0 && autoVar3) {
+        if (!autoVar2 && leftDrive1.getEncoder().getPosition() > autoEncoderVar + 4.2 && autoVar3) {
           intake.set(TalonSRXControlMode.PercentOutput,0);
           leftDrive1.set(-0.25);
           leftDrive2.set(-0.25);
           rightDrive1.set(-0.25);
           rightDrive2.set(-0.25);
           autoSequence = 2;
-        } else if(!autoVar2 && leftDrive1.getEncoder().getPosition() < -54.0 && autoVar3 && autoSequence ==2){
+        } else if(!autoVar2 && leftDrive1.getEncoder().getPosition() < autoEncoderVar - 2.8 && autoVar3 && autoSequence == 2){
           leftDrive1.set(0.25);
           leftDrive2.set(0.25);
           rightDrive1.set(-0.25);
@@ -714,7 +715,7 @@ SmartDashboard.putNumber("left motor percent", leftArm.getMotorOutputPercent());
         }
 
 
-        if (!autoVar3 && leftDrive1.getEncoder().getPosition() > -45.0) {
+        if (!autoVar3 && leftDrive1.getEncoder().getPosition() > autoEncoderVar + 4.2) {
           target = armUpPos;
           leftDrive1.set(-0.25);
           leftDrive2.set(-0.25);
@@ -722,7 +723,7 @@ SmartDashboard.putNumber("left motor percent", leftArm.getMotorOutputPercent());
           rightDrive2.set(-0.25);
           autoSequence = 3;
           autoCount = 0;
-        } else if(!autoVar3 && autoSequence == 3 && autoCount < 350 && leftDrive1.getEncoder().getPosition() < -86.0){
+        } else if(!autoVar3 && autoSequence == 3 && autoCount < 350 && leftDrive1.getEncoder().getPosition() < autoEncoderVar - 36.8){
           // Arrived at the Amp again
           if(autoBoo){
             autoCount = 0;
