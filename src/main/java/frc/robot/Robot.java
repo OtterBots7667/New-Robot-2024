@@ -753,10 +753,10 @@ SmartDashboard.putNumber("left motor percent", leftArm.getMotorOutputPercent());
         } else if(!autoVar3 && leftDrive1.getEncoder().getPosition() > autoEncoderVar2 - 10 && autoSequence2 == 1){
           outtake.set(TalonSRXControlMode.PercentOutput,0);
           intake.set(TalonSRXControlMode.PercentOutput,0);
-          leftDrive1.set(0.25);
-          leftDrive2.set(0.25);
-          rightDrive1.set(-0.25);
-          rightDrive2.set(-0.25);
+          leftDrive1.set(-0.25);
+          leftDrive2.set(-0.25);
+          rightDrive1.set(0.25);
+          rightDrive2.set(0.25);
           autoSequence = 5;
         }else if(!autoVar3 && autoSequence == 5){
           leftDrive1.set(0.25);
