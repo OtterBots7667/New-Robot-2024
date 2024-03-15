@@ -32,7 +32,7 @@ public class Robot extends TimedRobot {
   private static final String doNothing = "Do Nothing";
   private static final String red2Note = "Red 2 Note";
   // private static final String red1Note = "Red 1 Note";
-  private static final String driveForward= "Drive Forward 8ft";
+  private static final String driveForward= "Drive Forward Until A-Stop is Hit";
   private static final String blue2Note = "Blue 2 Note";
   // private static final String blue1Note = "Blue1 Note";
   // private static final String red3Note = "Red 3 Note";
@@ -79,7 +79,7 @@ int autoSequence = 0;
 int autoSequence2 = 0;
 Boolean autoBoo = true;
 Double autoEncoderVar;
-Double autoEncoderVar2;
+Double autoEncoderVar2 = 0.0;
 
 //PID variables
 Double f = 0.1149;
@@ -114,7 +114,7 @@ Boolean armVar1 = false;
     m_chooser.setDefaultOption("Do Nothing", doNothing);
     m_chooser.addOption("Red 2 Note", red2Note);
     // m_chooser.addOption("Red 1 Note", red1Note);
-    m_chooser.addOption("Drive Forward 8 ft", driveForward);
+    m_chooser.addOption("Drive Forward Until A-Stop", driveForward);
     m_chooser.addOption("Blue 2 Note", blue2Note);
     // m_chooser.addOption("Blue1 Note", blue1Note);
     // m_chooser.addOption("Red 3 Note", red3Note);
@@ -639,18 +639,11 @@ SmartDashboard.putNumber("left motor percent", leftArm.getMotorOutputPercent());
         // about 1800 tics is a solid backup
 
         //Drive Straight Forward 8 ft
-        if (leftDrive1.getEncoder().getPosition() < 45) {
           target = armUpPos;
           leftDrive1.set(0.25);
           leftDrive2.set(0.25);
           rightDrive1.set(0.25);
           rightDrive2.set(0.25);
-        } else {
-          leftDrive1.set(0);
-          leftDrive2.set(0);
-          rightDrive1.set(0);
-          rightDrive2.set(0);
-        }
       break;
 
       case blue2Note:
@@ -719,6 +712,7 @@ SmartDashboard.putNumber("left motor percent", leftArm.getMotorOutputPercent());
           rightDrive1.set(-0.25);
           rightDrive2.set(-0.25);
           autoSequence = 2;
+          // About where it crashes
         } else if(!autoVar2 && leftDrive1.getEncoder().getPosition() < autoEncoderVar - 2.8 && autoVar3 && autoSequence == 2){
           leftDrive1.set(0.25);
           leftDrive2.set(0.25);
@@ -1091,7 +1085,7 @@ leftDrive2.set(driveSpeedLeft);
 if (joyButtons.getRawButton(1)) {
   intake.set(TalonSRXControlMode.PercentOutput,1);
 } else if(joyButtons.getRawButton(4)){
-  intake.set(TalonSRXControlMode.PercentOutput, -0.35);
+  intake.set(TalonSRXControlMode.PercentOutput, -1);
 } else {
     intake.set(TalonSRXControlMode.PercentOutput,0);
 }
