@@ -4,8 +4,6 @@
 
 package frc.robot;
 
-import com.ctre.phoenix6.Orchestra;
-
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
@@ -1107,9 +1105,9 @@ if (joyButtons.getRawButton(8)) {
 } else if(joyButtons.getRawButton(11)){
 
   if(joyButtons.getRawAxis(1) == -1){
-target -= 200;
+target -= 250;
 }else if(joyButtons.getRawAxis(1) == 1){
-target += 200;
+target += 250;
 }
 
 }
