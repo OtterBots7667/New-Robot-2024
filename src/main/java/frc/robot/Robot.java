@@ -8,12 +8,14 @@ import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
+import edu.wpi.first.cameraserver.CameraServer;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
 import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
 import com.ctre.phoenix.motorcontrol.TalonSRXControlMode;
@@ -48,6 +50,7 @@ private Joystick joyButtons = new Joystick(1);
   
 private TalonFX rightArm = new TalonFX(3);
 private TalonFX leftArm = new TalonFX(2);
+private TalonSRX climbLatch = new TalonSRX(10);
 private TalonSRX intake = new TalonSRX(4);
 private TalonSRX outtake = new TalonSRX(5);
 
@@ -80,7 +83,7 @@ Double autoEncoderVar;
 Double autoEncoderVar2 = 0.0;
 
 //PID variables
-Double f = 0.1149;
+Double f = 0.1;
 Double p = 0.0000144;
 Double i = 0.0;
 Double d = 0.0;
@@ -90,6 +93,10 @@ Double pidRaw = 0.0;
 
 Double armUpPos = -4000.0;
 Double armDownPos = 23000.0;
+Double climbUpPos = -20000.0; // CHANGE THIS ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Double climbDownPos = -3000.0;
+Boolean climbVar = false;
+Boolean climbTestVar = false;
 
 Boolean startingArmPhase = true;
 int armPhaseCounter = 0;
@@ -104,6 +111,8 @@ Boolean armVar1 = false;
    */
   @Override
   public void robotInit() {
+    CameraServer.startAutomaticCapture();
+
     leftArm.setSelectedSensorPosition(0.0);
     rightArm.setSelectedSensorPosition(0.0);
     leftDrive1.getEncoder().setPosition(0.0);
@@ -1095,7 +1104,7 @@ if (joyButtons.getRawButton(2)) {
 }
 
 
-if (!joyButtons.getRawButton(11)){
+if (!joyButtons.getRawButton(11) && !joyButtons.getRawButton(12)){
 // Arm Up & Down code
 if (joyButtons.getRawButton(8)) {
   target = armUpPos;
@@ -1104,24 +1113,28 @@ if (joyButtons.getRawButton(8)) {
   }
 } else if(joyButtons.getRawButton(11)){
 
+// Manuel Mode
   if(joyButtons.getRawAxis(1) == -1){
-target -= 250;
+target -= 300;
 }else if(joyButtons.getRawAxis(1) == 1){
-target += 250;
+target += 300;
 }
 
+}else if(joyButtons.getRawButton(12)){
+  
+  // Fine Control Manuel
+  if(joyButtons.getRawAxis(1) == -1){
+target -= 50;
+}else if(joyButtons.getRawAxis(1) == 1){
+target += 50;
+}
 }
 
-
-
-//      else if(joyButtons.getRawButton(11)){
-//     if(joyButtons.getRawAxis(1) == -1){
-//       target += 50;
-//     } else if(joyButtons.getRawAxis(1) == 1){
-//       target -= 50;
-//     }
-//   }
-
+if(joyButtons.getRawButton(3)){
+climbLatch.set(TalonSRXControlMode.PercentOutput,1);
+}else{
+  climbLatch.set(TalonSRXControlMode.PercentOutput,0);
+}
 }
 
   /** This function is called once when the robot is disabled. */
@@ -1136,9 +1149,7 @@ target += 250;
   /** This function is called periodically during test mode. */
   @Override
   public void testPeriodic() {
-leftArm.set(TalonFXControlMode.PercentOutput, joyDrive.getRawAxis(1) * -1);
-rightArm.set(TalonFXControlMode.PercentOutput, joyDrive.getRawAxis(1));
-System.out.println(leftArm.getMotorOutputPercent());
+
   }
   /** This function is called once when the robot is first started up. */
   @Override
@@ -1174,3 +1185,4 @@ System.out.println(leftArm.getMotorOutputPercent());
 // Hank
 // Bailey
 // Luna
+// With the flip switched down, 
