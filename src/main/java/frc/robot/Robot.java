@@ -9,7 +9,9 @@ import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import edu.wpi.first.cameraserver.CameraServer;
-
+import edu.wpi.first.cscore.CameraServerJNI;
+import edu.wpi.first.cscore.UsbCamera;
+import edu.wpi.first.cscore.VideoSink;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -78,6 +80,7 @@ int autoSequence2 = 0;
 Boolean autoBoo = true;
 Double autoEncoderVar;
 Double autoEncoderVar2 = 0.0;
+int timer254 = 0;
 
 //PID variables
 Double f = 0.1;
@@ -104,8 +107,12 @@ Boolean armVar1 = false;
    */
   @Override
   public void robotInit() {
-    CameraServer.startAutomaticCapture();
 
+    UsbCamera myCam;
+    myCam = CameraServer.startAutomaticCapture();
+    myCam.setResolution(320, 240);
+    myCam.setFPS(30);
+    
     leftArm.setSelectedSensorPosition(0.0);
     rightArm.setSelectedSensorPosition(0.0);
     leftDrive1.getEncoder().setPosition(0.0);
@@ -186,7 +193,6 @@ SmartDashboard.putNumber("Right Encoder", rightDrive1.getEncoder().getPosition()
 SmartDashboard.putNumber("left motor percent", leftArm.getMotorOutputPercent());
   }
 
-
   /**
    * This autonomous (along with the chooser code above) shows how to select between different
    * autonomous modes using the dashboard. The sendable chooser code works with the Java
@@ -217,7 +223,12 @@ SmartDashboard.putNumber("left motor percent", leftArm.getMotorOutputPercent());
 
       case red2Note:
         // Position 1, score 2 notes
-        // 1,027 ticks is 54.5 inches 
+        // 1,027 ticks is 54.5 inches
+
+      /*    timer254++;
+        if (timer254 < 400){
+          
+        } else  */
         if (rightDrive1.getEncoder().getPosition() > -24.9 && autoVar1) {
           target = armUpPos;
           leftDrive1.set(-0.15);
@@ -257,7 +268,7 @@ SmartDashboard.putNumber("left motor percent", leftArm.getMotorOutputPercent());
         }
 
 
-        if(!autoVar1 && rightDrive1.getEncoder().getPosition() > autoEncoderVar + 2.2 && autoVar2){
+        if(!autoVar1 && rightDrive1.getEncoder().getPosition() > autoEncoderVar + 7.5 && autoVar2){
           leftDrive1.set(0.25);
           leftDrive2.set(0.25);
           rightDrive1.set(-0.25);
@@ -347,6 +358,11 @@ SmartDashboard.putNumber("left motor percent", leftArm.getMotorOutputPercent());
       case blue2Note:
   // Position 1, score 2 notes
         // 1,027 ticks is 54.5 inches 
+
+      /*      timer254++;
+        if (timer254 < 400){
+          
+        } else */
         if (leftDrive1.getEncoder().getPosition() > -24.9 && autoVar1) {
           target = armUpPos;
           leftDrive1.set(-0.15);
@@ -386,7 +402,7 @@ SmartDashboard.putNumber("left motor percent", leftArm.getMotorOutputPercent());
         }
 
 
-        if(!autoVar1 && leftDrive1.getEncoder().getPosition() > autoEncoderVar + 2.2 && autoVar2){
+        if(!autoVar1 && leftDrive1.getEncoder().getPosition() > autoEncoderVar + 7.5 && autoVar2){
           leftDrive1.set(-0.25);
           leftDrive2.set(-0.25);
           rightDrive1.set(0.25);
